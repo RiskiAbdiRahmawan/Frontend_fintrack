@@ -15,9 +15,9 @@ type User = {
 };
 
 type AddUserModalProps = {
-  user: User;
+  user?: User;
   branches: Branch[];
-  onChange: (user: User) => void;
+  onChange: (user: Partial<User>) => void;
   onAdd: () => void;
   onClose: () => void;
 };
@@ -30,7 +30,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
   onClose,
 }) => {
   const isDisabled =
-    !user.name || !user.email || !user.password || !user.branch_id;
+    !user?.name || !user?.email || !user?.password || !user?.branch_id;
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-50 z-50">
@@ -52,9 +52,9 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
             <label className="block font-medium">Cabang</label>
             <select
               className="w-full mt-1 border border-gray-300 rounded-md p-2"
-              value={user.branch_id}
+              value={user?.branch_id}
               onChange={(e) =>
-                onChange({ ...user, branch_id: Number(e.target.value) })
+                onChange({ ...(user || {}), branch_id: Number(e.target.value) })
               }
             >
               <option value={0}>-- Pilih Cabang --</option>
@@ -70,7 +70,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
             <label className="block font-medium">Nama</label>
             <Input
               name="name"
-              value={user.name}
+              value={user?.name}
               onChange={(e) => onChange({ ...user, name: e.target.value })}
               className="mt-1"
             />
@@ -81,7 +81,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
             <Input
               name="email"
               type="email"
-              value={user.email}
+              value={user?.email}
               onChange={(e) => onChange({ ...user, email: e.target.value })}
               className="mt-1"
             />
@@ -92,7 +92,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
             <Input
               name="password"
               type="password"
-              value={user.password}
+              value={user?.password}
               onChange={(e) => onChange({ ...user, password: e.target.value })}
               className="mt-1"
             />
