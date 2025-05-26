@@ -6,7 +6,7 @@ import { Category } from "types/category";
 import { getCategories } from "service/categoryService";
 
 type Props = {
-  transaction: CreateTransaction;
+  transaction?: CreateTransaction;
   onClose: () => void;
   onSuccess: () => void;
 };
@@ -16,10 +16,12 @@ const AddTransactionModal: React.FC<Props> = ({
   onClose,
   onSuccess,
 }) => {
-  const [amount, setAmount] = useState(transaction.amount || 0);
-  const [description, setDescription] = useState(transaction.description || "");
+  const [amount, setAmount] = useState(transaction?.amount ?? 0);
+  const [description, setDescription] = useState(
+    transaction?.description ?? ""
+  );
   const [transactionDate, setTransactionDate] = useState(
-    transaction.transaction_date || ""
+    transaction?.transaction_date ?? ""
   );
   const [categoryType, setCategoryType] = useState<string>("");
   const [categoryId, setCategoryId] = useState<number>(0);
