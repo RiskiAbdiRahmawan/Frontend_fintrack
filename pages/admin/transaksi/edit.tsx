@@ -16,10 +16,10 @@ const EditTransactionModal: React.FC<Props> = ({
   onClose,
   onSuccess,
 }) => {
-  const [amount, setAmount] = useState(transaction.amount);
-  const [description, setDescription] = useState(transaction.description);
+  const [amount, setAmount] = useState(transaction.amount || 0);
+  const [description, setDescription] = useState(transaction.description || "");
   const [transactionDate, setTransactionDate] = useState(
-    transaction.transaction_date
+    transaction.transaction_date || ""
   );
   const [categoryType, setCategoryType] = useState(transaction.category.type);
   const [categoryId, setCategoryId] = useState<number>(0);
