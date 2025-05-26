@@ -19,7 +19,13 @@ import {
 } from "@heroicons/react/24/solid";
 import Layout from "example/containers/Layout";
 import PageTitle from "example/components/Typography/PageTitle";
-import { getUsers, deleteUser, getBranches, createUser, updateUser } from "utils/superadmin/userData";
+import {
+  getUsers,
+  deleteUser,
+  getBranches,
+  createUser,
+  updateUser,
+} from "utils/superadmin/userData";
 import AddUserModal from "./tambah";
 import EditUserModal from "./edit";
 import DetailUserModal from "./detail";
@@ -48,7 +54,7 @@ function ManajemenUser() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [addingUser, setAddingUser] = useState<boolean>(false);
-  
+
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
@@ -96,10 +102,7 @@ function ManajemenUser() {
   // }, [searchKeyword, data]);
 
   const startIndex = (page - 1) * resultsPerPage;
-  const paginatedData = filtered.slice(
-    startIndex,
-    startIndex + resultsPerPage
-  );
+  const paginatedData = filtered.slice(startIndex, startIndex + resultsPerPage);
 
   const handleAddUser = async () => {
     try {
@@ -243,7 +246,7 @@ function ManajemenUser() {
         <AddUserModal
           user={newUser}
           branches={branches}
-          onChange={(user) => setNewUser(user)}
+          onChange={(user) => setNewUser(user as User)}
           onClose={() => setAddingUser(false)}
           onAdd={handleAddUser}
         />
