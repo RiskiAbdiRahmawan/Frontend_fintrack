@@ -16,10 +16,6 @@ const AddTransactionModal: React.FC<Props> = ({
   onClose,
   onSuccess,
 }) => {
-  if (!transaction) {
-    return <div>Loading transaksi...</div>;
-  }
-
   const [amount, setAmount] = useState(transaction.amount);
   const [description, setDescription] = useState(transaction.description);
   const [transactionDate, setTransactionDate] = useState(
@@ -91,6 +87,10 @@ const AddTransactionModal: React.FC<Props> = ({
       }
     }
   };
+
+  if (!transaction) {
+    return <div>Loading transaksi...</div>;
+  }
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-50 z-50">
