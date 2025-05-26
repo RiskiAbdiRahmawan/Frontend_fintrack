@@ -16,6 +16,10 @@ const AddTransactionModal: React.FC<Props> = ({
   onClose,
   onSuccess,
 }) => {
+  if (!transaction) {
+    return <div>Loading transaksi...</div>;
+  }
+
   const [amount, setAmount] = useState(transaction.amount);
   const [description, setDescription] = useState(transaction.description);
   const [transactionDate, setTransactionDate] = useState(
