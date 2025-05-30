@@ -1,25 +1,19 @@
 import React, { useState } from "react";
 import { Button } from "@roketid/windmill-react-ui";
-import { User, Branch } from "utils/superadmin/userData"; // sesuaikan path impor
+import { User } from "types/user";
 
-type DetailUserModalProps = {
-  user: User;
-  branches: Branch[];
+type Props = {
+  user: User | null;
   onClose: () => void;
 };
 
-const DetailUserModal: React.FC<DetailUserModalProps> = ({
-  user,
-  branches,
-  onClose,
-}) => {
+const DetailUserModal: React.FC<Props> = ({ user, onClose }) => {
   const [showPassword, setShowPassword] = useState(false);
-
-  // Cari branch sesuai branch_id user
-  const userBranch = branches.find((b) => b.id === user.branch_id);
 
   // Password ditampilkan dengan simbol atau bintang
   const displayPassword = showPassword ? "********" : "••••••••";
+
+  if (!user) return null;
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-gray-500 bg-opacity-50 z-50">
@@ -48,18 +42,7 @@ const DetailUserModal: React.FC<DetailUserModalProps> = ({
             },
             {
               label: "Cabang",
-              value: userBranch ? (
-                <>
-                  {userBranch.branch_name}
-                  {userBranch.branch_code && (
-                    <span className="text-gray-500 ml-2">
-                      ({userBranch.branch_code})
-                    </span>
-                  )}
-                </>
-              ) : (
-                "Tidak Ditemukan"
-              ),
+              value: user.branch.branch_name,
             },
           ].map(({ label, value }) => (
             <div key={label} className="grid grid-cols-12 gap-2 items-center">
