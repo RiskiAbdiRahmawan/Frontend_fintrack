@@ -105,11 +105,11 @@ function LoginPage() {
           </Label>
 
           <div className="flex justify-between items-center mb-6">
-            <Link href="/example/forgot-password">
+            {/* <Link href="/">
               <span className="text-sm text-indigo-600 hover:underline cursor-pointer">
                 Forgot password?
               </span>
-            </Link>
+            </Link> */}
           </div>
 
           {error && <p className="text-red-600 text-center mb-4">{error}</p>}
