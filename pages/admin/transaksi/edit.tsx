@@ -48,7 +48,7 @@ const EditTransactionModal: React.FC<Props> = ({
         setCategoryId(matched.id);
       }
     });
-  }, []);
+  }, [allCategory, transaction?.category.name]);
 
   const filteredCategories = allCategory.filter(
     (cat) => cat.category_type === categoryType
