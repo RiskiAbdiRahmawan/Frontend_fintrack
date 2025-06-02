@@ -105,7 +105,7 @@ function ManajemenKategori() {
     try {
       setIsLoading(true);
       const categoryResponse = await getCategories();
-      setAllCategories(categoryResponse.data);
+      setAllCategories(categoryResponse);
     } catch (error) {
       console.error("Error fetching Users: ", error);
       setError("Gagal mengambil data pengguna");
