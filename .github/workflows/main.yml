@@ -1,0 +1,28 @@
+name: Deploy to Azure VM
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.AZURE_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+    - name: Deploy via SSH
+      run: |
+        ssh -o StrictHostKeyChecking=no feuser@20.189.121.171 << 'EOF'
+          cd coba/Frontend_fintrack
+          git pull origin main
+          docker-compose down
+          docker-compose up --build -d
+        EOF
