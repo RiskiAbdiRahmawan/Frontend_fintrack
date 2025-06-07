@@ -1,14 +1,5 @@
 // src/data/dashboardData.ts
-
-
-export const branches = ["Klojen", "Lowokwaru", "Junrejo", "Blimbing"];
-// Data untuk DokumentasiCabang
-export const dokumentasiCabangData = [
-  { id: 1, name: 'Klojen' },
-  { id: 2, name: 'Lowokwaru' },
-  { id: 3, name: 'Junrejo' },
-  { id: 4, name: 'Blimbing' },
-]
+import axiosInstance from "../../lib/axios";
 
 // src/utils/superadmin/dashboardData.ts
 
@@ -23,8 +14,8 @@ export type cardSummaryData = {
 // Fungsi fetch dari API backend
 export async function getCardSummaryData(): Promise<cardSummaryData[]> {
   try {
-    const res = await fetch("http://127.0.0.1:8000/api/superadmin/dashboard-summary");
-    const data = await res.json();
+    const res = await axiosInstance.get("/superadmin/dashboard-summary");
+    const data = await res.data;
 
     return [
       {
@@ -73,17 +64,17 @@ export interface TrendLineApiResponse {
 }
 
 export async function fetchTrendLineData(): Promise<TrendLineApiResponse> {
-  const res = await fetch("http://127.0.0.1:8000/api/superadmin/dashboard-trendline");
-  if (!res.ok) throw new Error("Failed to fetch trend line data");
-  return res.json();
+  const res = await axiosInstance.get("/superadmin/dashboard-trendline");
+  if (!res.data) throw new Error("Failed to fetch trend line data");
+  return res.data;
 }
 
 export async function fetchTrendBarData(): Promise<TrendLineApiResponse> {
-  const res = await fetch("http://127.0.0.1:8000/api/superadmin/dashboard-trendbar");
-  if (!res.ok) {
+  const res = await axiosInstance.get("/superadmin/dashboard-trendbar");
+  if (!res.data) {
     throw new Error("Gagal mengambil data trend bar");
   }
-  return await res.json();
+  return await res.data;
 }
 
 // utils/superadmin/dashboardData.ts
@@ -92,11 +83,11 @@ export interface DokumentasiCabangItem {
   name: string;
 }
 
-export async function fetchDokumentasiCabang(): Promise<DokumentasiCabangItem[]> {
-  const response = await fetch(
-    "http://127.0.0.1:8000/api/superadmin/dashboard-summary"
-  );
-  const data = await response.json();
+export async function fetchDokumentasiCabang(): Promise<
+  DokumentasiCabangItem[]
+> {
+  const response = await axiosInstance.get("/superadmin/dashboard-summary");
+  const data = await response.data;
 
   return data.branches.map((branch: any) => ({
     id: branch.branch_code,
