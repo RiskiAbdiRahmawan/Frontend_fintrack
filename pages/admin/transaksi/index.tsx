@@ -43,7 +43,6 @@ function ManajemenTransaksi() {
   const [page, setPage] = useState<number>(1);
   const [resultsPerPage, setResultsPerPage] = useState(10);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
-  const keyword = searchKeyword.toLowerCase();
 
   //detail
   const [selectedTransaction, setSelectedTransaction] =
@@ -79,7 +78,7 @@ function ManajemenTransaksi() {
   const handleAdd = () => {
     setAddTransaction(true);
   };
-  const clodeAddModel = () => {
+  const clodeAddModal = () => {
     setAddTransaction(false);
   };
   const initialTransaction: CreateTransaction = {
@@ -125,6 +124,7 @@ function ManajemenTransaksi() {
     }
   };
 
+  // index
   const fetchTransactions = async () => {
     try {
       setLoading(true);
@@ -149,20 +149,20 @@ function ManajemenTransaksi() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       const filtered = allTransactions.filter((t) =>
-        t.category.name.toLowerCase().includes(keyword)
+        t.category.name.toLowerCase().includes(searchKeyword.toLowerCase())
       );
 
       const start = (page - 1) * resultsPerPage;
-      const Pagination = filtered.slice(start, start + resultsPerPage);
+      const pagination = filtered.slice(start, start + resultsPerPage);
 
-      setTransactions(Pagination);
+      setTransactions(pagination);
       setTotalResults(filtered.length);
     }, 300);
 
     return () => clearTimeout(timeout);
   }, [allTransactions, searchKeyword, page, resultsPerPage]);
 
-  if (error) return <p className="tex;t-red-500">{error}</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
 
   return (
     <Layout>
@@ -351,13 +351,14 @@ function ManajemenTransaksi() {
           </TableContainer>
         </div>
 
-        {/* Popups */}
+        {/* Popup detail */}
         {isModalOpen && selectedTransaction && (
           <DetailTransaksiModal
             transaction={selectedTransaction}
             onClose={closeTransactionDetails}
           />
         )}
+        {/* Popup edit */}
         {editTransaction && (
           <EditTransaksiModal
             transaction={editTransaction}
@@ -374,10 +375,11 @@ function ManajemenTransaksi() {
             }}
           />
         )}
+        {/* Popup tambah */}
         {addTransaction && (
           <AddTransaksiModal
             transaction={initialTransaction}
-            onClose={clodeAddModel}
+            onClose={clodeAddModal}
             onSuccess={() => {
               getTransactionsByBranch(
                 Number(localStorage.getItem("branch_id"))

@@ -1,20 +1,18 @@
-import React from 'react';
-import { Button } from '@roketid/windmill-react-ui';
-
-type User = {
-  id: number;
-  name: string;
-  password: string;
-  branchId?: number;
-};
+import React from "react";
+import { Button } from "@roketid/windmill-react-ui";
+import { User } from "types/user";
 
 type DeleteUserModalProps = {
-  user: User;
+  user?: User;
   onDelete: () => void;
   onClose: () => void;
 };
 
-const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ user, onDelete, onClose }) => {
+const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
+  user,
+  onDelete,
+  onClose,
+}) => {
   // Function to handle cancellation
   const cancelDelete = () => {
     onClose(); // Trigger onClose to close the modal
@@ -39,7 +37,10 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ user, onDelete, onClo
           </Button>
         </div>
         <div className="p-4">
-          <p>Apakah Anda yakin ingin menghapus pengguna <strong>{user.name}</strong>?</p>
+          <p>
+            Apakah Anda yakin ingin menghapus pengguna{" "}
+            <strong>{user?.name}</strong>?
+          </p>
         </div>
         <div className="flex justify-end space-x-2 p-4 border-t">
           <Button

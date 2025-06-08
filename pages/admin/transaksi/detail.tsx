@@ -13,7 +13,7 @@ const TransactionDetailModal: React.FC<Props> = ({ transaction, onClose }) => {
   function formatDateTime(dateString: string): string {
     const date = new Date(dateString);
     const day = date.getDate();
-    const month = date.getMonth() + 1; // bulan dimulai dari 0
+    const month = date.getMonth() + 1;
     const year = date.getFullYear();
 
     const hours = date.getHours().toString().padStart(2, "0");
@@ -49,7 +49,7 @@ const TransactionDetailModal: React.FC<Props> = ({ transaction, onClose }) => {
             value={formatDateTime(transaction.transaction_date)}
           />
           <DetailItem label="Tipe" value={transaction.category.type} />
-          <DetailItem label="Deskripsi" value={transaction.description} />
+          <DetailItem label="Deskripsi" value={transaction.description ?? ""} />
         </div>
       </div>
     </div>

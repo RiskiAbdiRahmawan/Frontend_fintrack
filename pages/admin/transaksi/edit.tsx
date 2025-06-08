@@ -6,7 +6,7 @@ import { Category } from "types/category";
 import { getCategories } from "service/categoryService";
 
 type Props = {
-  transaction: Transaction;
+  transaction?: Transaction;
   onClose: () => void;
   onSuccess: () => void;
 };
@@ -16,12 +16,14 @@ const EditTransactionModal: React.FC<Props> = ({
   onClose,
   onSuccess,
 }) => {
-  const [amount, setAmount] = useState(transaction.amount);
-  const [description, setDescription] = useState(transaction.description);
-  const [transactionDate, setTransactionDate] = useState(
-    transaction.transaction_date
+  const [amount, setAmount] = useState(transaction?.amount ?? 0);
+  const [description, setDescription] = useState(
+    transaction?.description ?? ""
   );
-  const [categoryType, setCategoryType] = useState(transaction.category.type);
+  const [transactionDate, setTransactionDate] = useState(
+    transaction?.transaction_date ?? ""
+  );
+  const [categoryType, setCategoryType] = useState(transaction?.category.type);
   const [categoryId, setCategoryId] = useState<number>(0);
   const [allCategory, setAllCategory] = useState<Category[]>([]);
   const [isSubmit, setSubmit] = useState(false);
@@ -40,13 +42,13 @@ const EditTransactionModal: React.FC<Props> = ({
       setAllCategory(data);
 
       const matched = data.find(
-        (cat) => cat.category_name === transaction.category.name
+        (cat) => cat.category_name === transaction?.category.name
       );
       if (matched) {
         setCategoryId(matched.id);
       }
     });
-  }, []);
+  }, [allCategory, transaction?.category.name]);
 
   const filteredCategories = allCategory.filter(
     (cat) => cat.category_type === categoryType
@@ -63,7 +65,7 @@ const EditTransactionModal: React.FC<Props> = ({
     const formatDate = transactionDate.replace("T", " ");
 
     try {
-      await updateTransaction(transaction.id, {
+      await updateTransaction(transaction?.id ?? 0, {
         category_id: categoryId,
         amount: amount,
         transaction_date: formatDate,
@@ -79,6 +81,10 @@ const EditTransactionModal: React.FC<Props> = ({
       }
     }
   };
+
+  if (!transaction) {
+    return <div>Loading transaksi...</div>;
+  }
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-50 z-50">

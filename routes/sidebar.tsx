@@ -36,6 +36,12 @@ const routes: IRoute[] = [
     roles: ["super_admin"],
   },
   {
+    path: "/superadmin/perencanaan",
+    icon: "ChartsIcon",
+    name: "Perencanaan Anggaran",
+    roles: ["super_admin"],
+  },
+  {
     path: "/superadmin/m-user",
     icon: "FormsIcon",
     name: "Manajemen User",

@@ -1,5 +1,5 @@
 // dashboard/data/transaksiData.ts
-import axios from "../../lib/axios";
+import axiosInstance from "../../lib/axios";
 
 export interface Transaksi {
   tipe: "Pemasukan" | "Pengeluaran";
@@ -14,7 +14,7 @@ export interface DashboardSummary {
 }
 
 export async function fetchDashboardSummary(): Promise<DashboardSummary> {
-  const res = await axios.get(
+  const res = await axiosInstance.get(
     "/dashboard-summary/" + Number(localStorage.getItem("branch_id"))
   );
 
@@ -38,7 +38,7 @@ export interface TrendChartData {
 
 export async function fetchTrendChartData(): Promise<TrendChartData | null> {
   try {
-    const res = await axios.get(
+    const res = await axiosInstance.get(
       "/dashboard-trendchart/" + Number(localStorage.getItem("branch_id"))
     );
     if (!res.data) throw new Error("Failed to fetch trend chart data");
@@ -56,7 +56,7 @@ export interface TrendYearData {
 
 export const fetchTrendChartYearly = async (): Promise<TrendYearData[]> => {
   try {
-    const res = await axios.get(
+    const res = await axiosInstance.get(
       "/dashboard-trendchart-yearly/" +
         Number(localStorage.getItem("branch_id"))
     );
@@ -77,7 +77,7 @@ export interface TransaksiItem {
 
 export async function fetchRecentTransactions(): Promise<TransaksiItem[]> {
   try {
-    const res = await axios.get(
+    const res = await axiosInstance.get(
       "/dashboard-transactions/" + Number(localStorage.getItem("branch_id"))
     );
     if (!res.data) {

@@ -1,42 +1,35 @@
-import axios from "../lib/axios";
+import axiosInstance from "../lib/axios";
 import {
   Transaction,
   UpdateTransaction,
   CreateTransaction,
   LockTransaction,
+  TransactionResponse,
 } from "types/transaction";
 
-type TransactionResponse = {
-  data: Transaction[];
-  meta: {
-    status: string;
-    total: number;
-    today_count: number;
-    locked_count: number;
-  };
-};
-
 export const getTransactions = async (): Promise<TransactionResponse> => {
-  const response = await axios.get("/transaction-detail");
+  const response = await axiosInstance.get("/transaction-detail");
   return response.data;
 };
 
 export const getTransactionsByBranch = async (
   branchId: number
 ): Promise<TransactionResponse> => {
-  const response = await axios.get("/transaction-branch/" + branchId);
+  const response = await axiosInstance.get("/transaction-branch/" + branchId);
   return response.data;
 };
 
 export const getTransactionById = async (id: number): Promise<Transaction> => {
-  const response = await axios.get<{ data: Transaction }>("/transaction/" + id);
+  const response = await axiosInstance.get<{ data: Transaction }>(
+    "/transaction/" + id
+  );
   return response.data.data;
 };
 
 export const createTransaction = async (
   data: CreateTransaction
 ): Promise<Transaction> => {
-  const response = await axios.post<{ data: Transaction }>(
+  const response = await axiosInstance.post<{ data: Transaction }>(
     "/transaction",
     data
   );
@@ -47,7 +40,7 @@ export const updateTransaction = async (
   id: number,
   data: UpdateTransaction
 ): Promise<Transaction> => {
-  const response = await axios.patch<{ data: Transaction }>(
+  const response = await axiosInstance.patch<{ data: Transaction }>(
     "/transaction/" + id,
     data
   );
@@ -55,7 +48,7 @@ export const updateTransaction = async (
 };
 
 export const deleteTransaction = async (id: number): Promise<void> => {
-  const response = await axios.delete("/transaction/" + id);
+  const response = await axiosInstance.delete("/transaction/" + id);
   return response.data;
 };
 
@@ -63,7 +56,7 @@ export const lockTransaction = async (
   id: number,
   data: LockTransaction
 ): Promise<Transaction> => {
-  const response = await axios.patch<{ data: Transaction }>(
+  const response = await axiosInstance.patch<{ data: Transaction }>(
     "/transaction-lock/" + id,
     data
   );

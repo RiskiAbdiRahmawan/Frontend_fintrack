@@ -1,67 +1,84 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button, Input, Label, Select } from "@roketid/windmill-react-ui";
+import { User } from "types/user";
+import { updateUser } from "service/userService";
+import { Branch } from "types/branch";
+import { getbranches } from "service/branchService";
 
-
-type User = {
-  id?: number;
-  name: string;
-  email: string;
-  password: string;
-  branch_id: number;
-  role: string;
-};
-
-type Branch = {
-  id: number;
-  branch_name: string;
-  branch_code: string;
-};
-
-type EditUserModalProps = {
-  user: User;
-  branches: Branch[];
-  onChange: (user: User) => void;
-  onSave: () => void;
+type Props = {
+  user?: User;
   onClose: () => void;
-  isLoading?: boolean;
+  onSuccess: () => void;
 };
 
-const roleOptions = [
-  { value: "super_admin", label: "Super Admin" },
-  { value: "admin", label: "Admin" },
-  { value: "staff", label: "Staff" },
-];
-
-const EditUserModal: React.FC<EditUserModalProps> = ({
-  user,
-  branches,
-  onChange,
-  onSave,
-  onClose,
-  isLoading = false,
-}) => {
+const EditUserModal: React.FC<Props> = ({ user, onClose, onSuccess }) => {
+  const [userName, setUserName] = useState(user?.name ?? "");
+  const [userEmail, setUserEmail] = useState(user?.email ?? "");
+  const [userPassword, setUserPassword] = useState(user?.password ?? "");
+  const [allBranch, setAllBranch] = useState<Branch[]>([]);
+  const [branchName, setBranchName] = useState(user?.branch.branch_name ?? "");
+  const [userRole, setUserRole] = useState(user?.role ?? "");
+  const [branchId, setBranchId] = useState<number>(0);
+  const [isSubmit, setSubmit] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    let newValue: string | number = value;
-
-    if (name === "branch_id") newValue = parseInt(value);
-
-    onChange({
-      ...user,
-      [name]: newValue,
-    });
-  };
-  
-
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
   };
+  const roleOptions = [
+    { value: "super_admin", label: "Super Admin" },
+    { value: "admin", label: "Admin" },
+  ];
 
-  const isFormValid = user.name && user.email && user.branch_id && user.role;
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    getbranches().then((data: Branch[]) => {
+      setAllBranch(data);
+
+      const matched = data.find((brch) => brch.branch_name === branchName);
+      if (matched) {
+        setBranchId(matched.id);
+      }
+    });
+  }, [allBranch, user?.branch.branch_name]);
+
+  const handleSubmit = async () => {
+    setSubmit(true);
+    if (!branchId || !userName || !userEmail) {
+      alert("Mohon isi semua field wajib (cabang, nama, email).");
+      setSubmit(false);
+      return;
+    }
+
+    try {
+      await updateUser(user?.id ?? 0, {
+        branch_id: branchId,
+        name: userName,
+        email: userEmail,
+        password: userPassword,
+        role: userRole,
+      });
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error("Gagal update user: ", error);
+    } finally {
+      if (isMountedRef.current) {
+        setSubmit(false);
+      }
+    }
+  };
+
+  if (!user) {
+    return <div>Loading transaksi...</div>;
+  }
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-50 z-50">
@@ -72,7 +89,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           <button
             className="text-white hover:text-gray-300 text-xl"
             onClick={onClose}
-            disabled={isLoading}
           >
             &times;
           </button>
@@ -85,10 +101,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             <Label className="block font-medium mb-1">Role</Label>
             <Select
               name="role"
-              value={user.role}
-              onChange={handleInputChange}
+              value={userRole}
+              onChange={(e) => setUserRole(e.target.value)}
               className="mt-1 w-full"
-              disabled={isLoading}
             >
               {roleOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -100,18 +115,25 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
 
           {/* Branch */}
           <div>
-            <Label className="block font-medium mb-1">Branch</Label>
+            <Label className="block font-medium mb-1">Cabang</Label>
             <Select
               name="branch_id"
-              value={user.branch_id}
-              onChange={handleInputChange}
+              value={branchId}
+              onChange={(e) => {
+                const selectedId = Number(e.target.value);
+                const selectedBranch = allBranch.find(
+                  (brch) => brch.id === selectedId
+                );
+
+                setBranchId(selectedId);
+                setBranchName(selectedBranch?.branch_name || "");
+              }}
               className="mt-1 w-full"
-              disabled={isLoading}
             >
-              <option value={0}>Select Branch</option>
-              {branches.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.branch_name} ({branch.branch_code})
+              <option value={0}>Select Cabang</option>
+              {allBranch.map((brch) => (
+                <option key={brch.id} value={brch.id}>
+                  {brch.branch_name}
                 </option>
               ))}
             </Select>
@@ -122,10 +144,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             <Label className="block font-medium mb-1">Name</Label>
             <Input
               name="name"
-              value={user.name}
-              onChange={handleInputChange}
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
               className="mt-1 w-full"
-              disabled={isLoading}
             />
           </div>
 
@@ -135,10 +156,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             <Input
               name="email"
               type="email"
-              value={user.email}
-              onChange={handleInputChange}
+              value={userEmail}
+              onChange={(e) => setUserEmail(e.target.value)}
               className="mt-1 w-full"
-              disabled={isLoading}
             />
           </div>
 
@@ -149,17 +169,15 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               <Input
                 name="password"
                 type={showPassword ? "text" : "password"}
-                value={user.password}
-                onChange={handleInputChange}
+                value={userPassword}
+                onChange={(e) => setUserPassword(e.target.value)}
                 className="mt-1 w-full pr-10"
-                disabled={isLoading}
                 placeholder="Leave blank to keep current password"
               />
               <button
                 type="button"
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 onClick={togglePasswordVisibility}
-                disabled={isLoading}
               >
                 {showPassword ? (
                   <span className="text-sm">Hide</span>
@@ -180,16 +198,15 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             layout="outline"
             className="border-red-600 text-red-600 hover:border-red-700 hover:text-red-700"
             onClick={onClose}
-            disabled={isLoading}
           >
             Batal
           </Button>
           <Button
             className="bg-[#2B3674] hover:bg-[#1e2a5a] text-white"
-            onClick={onSave}
-            disabled={!isFormValid || isLoading}
+            onClick={handleSubmit}
+            disabled={isSubmit}
           >
-            {isLoading ? "Menyimpan..." : "Simpan Perubahan"}
+            Simpan
           </Button>
         </div>
       </div>

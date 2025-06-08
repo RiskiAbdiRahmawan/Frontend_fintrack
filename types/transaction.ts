@@ -1,8 +1,25 @@
-export interface Transaction {
-  id: number;
+export interface BaseTransaction {
   amount: number;
   transaction_date: string;
-  description: string;
+  description?: string;
+}
+
+export interface CreateTransaction extends BaseTransaction {
+  user_id: number;
+  branch_id: number;
+  category_id: number;
+}
+
+export interface UpdateTransaction extends BaseTransaction {
+  category_id: number;
+}
+
+export interface LockTransaction {
+  is_locked: boolean;
+}
+
+export interface Transaction extends BaseTransaction {
+  id: number;
   is_locked: boolean;
   user: {
     id: number;
@@ -19,22 +36,12 @@ export interface Transaction {
   };
 }
 
-export interface UpdateTransaction {
-  category_id: number;
-  amount: number;
-  transaction_date: string;
-  description?: string;
-}
-
-export interface CreateTransaction {
-  user_id: number;
-  branch_id: number;
-  category_id: number;
-  amount: number;
-  transaction_date: string;
-  description?: string;
-}
-
-export interface LockTransaction {
-  is_locked: boolean;
+export interface TransactionResponse {
+  data: Transaction[];
+  meta: {
+    status: string;
+    total: number;
+    today_count: number;
+    locked_count: number;
+  };
 }
