@@ -17,15 +17,58 @@ import PageTitle from "example/components/Typography/PageTitle";
 
 import AddBudgetModal from "./tambah";
 import DetailBudgetModal from "./detail";
-import EditBudgetModal from "./edit"; // Modal khusus edit
+import EditBudgetModal from "./edit";
 import { MoneyIcon } from "icons";
-import { Budget, BudgetItem } from "./type";
 
-// Format tanggal
+import {
+  deleteRak,
+  getRakByBranch,
+  getRakById,
+  updateRakStatus,
+} from "service/rakService";
+import {
+  RakBase,
+  RakResponseDetail,
+  CreateBudget,
+  CreateBudgetDetail,
+  UpdateRak,
+} from "types/rak";
+
+function formatPeriod(date: Date | string) {
+  const bulan = [
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
+  ];
+  const d = new Date(date);
+  const month = bulan[d.getMonth()];
+  const year = d.getFullYear();
+  return `${month} ${year}`;
+}
+
 function formatTanggal(date: Date | string) {
   const bulan = [
-    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
   ];
   const d = new Date(date);
   const day = d.getDate();
@@ -34,210 +77,204 @@ function formatTanggal(date: Date | string) {
   return `${day} ${month} ${year}`;
 }
 
-const initialBudgets: Budget[] = [
-    {
-      id: 1,
-      periode: "Juni 2025",
-      tanggalPengajuan: new Date("2025-05-01"),
-      status: "Diajukan",
-      catatanAdmin: "Gaji sudah sesuai standar",
-      items: [
-        {
-          kategori: "Gaji Karyawan",
-          deskripsi: "Gaji bulanan staf",
-          jumlah: 4000000,
-        },
-        {
-          kategori: "Transportasi",
-          deskripsi: "Biaya transportasi staf",
-          jumlah: 500000,
-        },
-      ],
-      amount: 4500000,
-      spent: 0,
-    },
-    {
-      id: 2,
-      periode: "Juni 2025",
-      tanggalPengajuan: new Date("2025-05-03"),
-      status: "Revisi Diminta",
-      catatanAdmin: "Mohon sesuaikan jumlah tagihan listrik bulan lalu.",
-      items: [
-        {
-          kategori: "Listrik",
-          deskripsi: "Tagihan listrik PLN",
-          jumlah: 1000000,
-        },
-      ],
-      amount: 1000000,
-      spent: 0,
-    },
-    {
-      id: 3,
-      periode: "Maret 2025",
-      tanggalPengajuan: new Date("2025-02-15"),
-      status: "Draft",
-      items: [
-        {
-          kategori: "PDAM",
-          deskripsi: "Pembayaran air",
-          jumlah: 1000000,
-        },
-        {
-          kategori: "Peralatan Kantor",
-          deskripsi: "Pembelian alat tulis",
-          jumlah: 300000,
-        },
-        {
-          kategori: "Konsumsi",
-          deskripsi: "Snack rapat",
-          jumlah: 200000,
-        },
-      ],
-      amount: 1500000,
-      spent: 0,
-    },
-    {
-      id: 4,
-      periode: "Maret 2025",
-      tanggalPengajuan: new Date("2025-02-20"),
-      status: "Disetujui",
-      items: [
-        {
-          kategori: "Kebutuhan Lapangan",
-          deskripsi: "Perbaikan rumput lapangan",
-          jumlah: 500000,
-        },
-      ],
-      amount: 500000,
-      spent: 0,
-    },
-    {
-      id: 5,
-      periode: "Mei 2025",
-      tanggalPengajuan: new Date("2025-01-28"),
-      status: "Ditolak",
-      catatanAdmin: "Tidak ada detail penggunaan anggaran.",
-      items: [
-        {
-          kategori: "Kebutuhan Lainnya",
-          deskripsi: "Miscellaneous",
-          jumlah: 500000,
-        },
-      ],
-      amount: 500000,
-      spent: 0,
-    },
-  ];
-
 function PerencanaanAnggaran() {
-  const [budgets, setBudgets] = useState<Budget[]>(initialBudgets);
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [filtered, setFiltered] = useState<Budget[]>(initialBudgets);
-  const [selected, setSelected] = useState<Budget | null>(null);
-  const [adding, setAdding] = useState(false);
-  const [editing, setEditing] = useState<Budget | null>(null);
-
-  const [newBudget, setNewBudget] = useState<Budget>({
-    id: 0,
-    amount: 0,
-    spent: 0,
-    periode: "",
-    tanggalPengajuan: new Date(),
-    status: "Draft",
-    catatanAdmin: "",
-    items: [],
-  });
-
-  const [page, setPage] = useState(1);
   const [resultsPerPage, setResultsPerPage] = useState(10);
-  const totalResults = filtered.length;
+  const [totalResults, setTotalResults] = useState<number>(0);
+  const [page, setPage] = useState(1);
+  const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const f = budgets.filter((b) =>
-      b.items.some((item) =>
-        item.kategori.toLowerCase().includes(searchKeyword.toLowerCase())
-      )
-    );
-    setFiltered(f);
-    setPage(1);
-  }, [searchKeyword, budgets]);
+  interface BudgetFormData {
+    period: string;
+    submission_date: string;
+    status: string;
+    detail: BudgetDetailItem[];
+  }
 
-  const handleDelete = (id: number) => {
-    setBudgets((prev) => prev.filter((b) => b.id !== id));
-    setSelected(null);
-  };
+  interface BudgetDetailItem {
+    category_id: number;
+    description: string;
+    amount: number;
+  }
 
-  const handleAdd = () => {
-    const id = budgets.length > 0 ? Math.max(...budgets.map((b) => b.id)) + 1 : 1;
-  
-    const periodeBaru = (() => {
-      const d = newBudget.tanggalPengajuan;
-      const bulan = [
-        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-      ];
-      return `${bulan[d.getMonth()]} ${d.getFullYear()}`;
-    })();
-  
-    const totalAmount = newBudget.items.reduce((acc, item) => acc + item.jumlah, 0);
-  
-    const budget = { ...newBudget, id, periode: periodeBaru, amount: totalAmount };
-  
-    setBudgets([...budgets, budget]);
-    setAdding(false);
-    setNewBudget({
-      id: 0,
-      amount: 0,
-      spent: 0,
-      periode: "",
-      tanggalPengajuan: new Date(),
-      status: "Draft",
-      catatanAdmin: "",
-      items: [],
-    });
-  };
-
-  const handleBudgetChange = (updatedBudget: Budget) => {
-    setEditing(updatedBudget);
-  };
-
-  const handleSubmitWithStatus = (status: "Draft" | "Diajukan") => {
-    if (editing) {
-      const updated = { ...editing, status };
-      // update array budgets
-      setBudgets((prev) =>
-        prev.map((b) => (b.id === updated.id ? updated : b))
-      );
-      setEditing(null); // tutup modal setelah submit
+  //detail
+  const [selectedPerencanaan, setSelectedPerencanaan] =
+    useState<RakResponseDetail | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const openPerencanaanDetails = async (id: number) => {
+    try {
+      const rak = await getRakById(id);
+      setSelectedPerencanaan(rak);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.log("Gagal mengambil detail perencanaan", error);
     }
   };
-  const handleUpdate = (updatedBudget: Budget) => {
-    setBudgets((prev) =>
-      prev.map((b) => (b.id === updatedBudget.id ? updatedBudget : b))
-    );
-    setEditing(null);
+  const closePerencanaanDetails = () => {
+    setSelectedPerencanaan(null);
+    setIsModalOpen(false);
   };
 
-  const paginated = filtered.slice(
-    (page - 1) * resultsPerPage,
-    page * resultsPerPage
-  );
+  //add
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const handleAdd = () => {
+    setIsAddModalOpen(true);
+  };
+  const closeAddModal = () => {
+    setIsAddModalOpen(false);
+  };
+  const initialRak: CreateBudget = {
+    user_id: 0,
+    branch_id: 0,
+    period: "",
+    status: "",
+    submission_date: "",
+  };
+  const initialRakDetail: CreateBudgetDetail = {
+    budget_id: 0,
+    category_id: 0,
+    description: "",
+    amount: 0,
+  };
 
-  const totalPlanned = budgets.reduce((acc, curr) => acc + curr.amount, 0);
-  const totalSpent = budgets.reduce((acc, curr) => acc + curr.spent, 0);
-  const totalDifference = totalPlanned - totalSpent;
+  //edit
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<RakResponseDetail | null>(
+    null
+  );
+  const openEditModal = (perencanaan: RakResponseDetail) => {
+    setEditingBudget(perencanaan);
+    setIsEditModalOpen(true);
+    setIsModalOpen(false);
+  };
+  const closeEditModal = () => {
+    setEditingBudget(null);
+    setIsEditModalOpen(false);
+  };
+
+  //delete
+  const handleDeleteBudget = async (id: number) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus budget ini?")) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await deleteRak(id);
+      await fetchPerencanaan();
+      closePerencanaanDetails();
+      alert("Budget berhasil dihapus!");
+    } catch (error) {
+      console.error("Error deleting budget:", error);
+      alert("Gagal menghapus budget");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  //ajukan
+  const handleAjukan = async (id: number) => {
+    if (confirm("Apakah Anda yakin ingin menyetujui pengajuan ini?")) {
+      handleUpdateStatus(id, "diajukan");
+    }
+  };
+  const handleUpdateStatus = async (
+    id: number,
+    status: string,
+    note?: string
+  ) => {
+    try {
+      await updateRakStatus(id, status, note);
+      await fetchPerencanaan();
+      closePerencanaanDetails();
+      alert("Budget berhasil diajukan!");
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Gagal mengupdate status");
+    }
+  };
+
+  //index
+  const [allRakData, setAllRakData] = useState<RakBase[]>([]);
+  const [rakData, setRakData] = useState<RakBase[]>([]);
+  const fetchPerencanaan = async () => {
+    try {
+      setLoading(true);
+      const branchId = Number(localStorage.getItem("branch_id"));
+      const response = await getRakByBranch(branchId);
+      setAllRakData(response.data);
+    } catch (error) {
+      console.error("Error fetching Budget:", error);
+      setError("Gagal mengambil data Perencanaan");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPerencanaan();
+  }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const filtered = allRakData.filter((rak) => {
+        const searchLower = searchKeyword.toLowerCase();
+        return (
+          rak.period.toLowerCase().includes(searchLower) ||
+          rak.submission_date.toLowerCase().includes(searchLower) ||
+          rak.total_amount.toString().includes(searchLower) ||
+          rak.status.toLowerCase().includes(searchLower)
+        );
+      });
+
+      const start = (page - 1) * resultsPerPage;
+      const pagination = filtered.slice(start, start + resultsPerPage);
+
+      setRakData(pagination);
+      setTotalResults(filtered.length);
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [allRakData, searchKeyword, page, resultsPerPage]);
+
+  function getStatusClass(status: string) {
+    switch (status.toLowerCase()) {
+      case "disetujui":
+        return "text-green-600 font-bold";
+      case "ditolak":
+        return "text-red-600 font-bold";
+      case "revisi":
+        return "text-yellow-500 font-bold";
+      case "diajukan":
+        return "text-blue-600 font-bold";
+      default:
+        return "text-gray-600 font-bold";
+    }
+  }
 
   return (
     <Layout>
       <PageTitle>Perencanaan Anggaran</PageTitle>
 
       {/* Ringkasan Anggaran */}
-      <div className="flex flex-row gap-4 mb-4">
+      {/* <div className="flex flex-row gap-4 mb-4">
         {[
-          { label: "Total Anggaran Direncanakan", value: totalPlanned, color: "text-blue-600" },
-          { label: "Total Pengeluaran", value: totalSpent, color: "text-green-600" },
-          { label: "Total Selisih", value: totalDifference, color: "text-red-600" },
+          {
+            label: "Total Anggaran Direncanakan",
+            value: totalPlanned,
+            color: "text-blue-600",
+          },
+          {
+            label: "Total Pengeluaran",
+            value: totalSpent,
+            color: "text-green-600",
+          },
+          {
+            label: "Total Selisih",
+            value: totalDifference,
+            color: "text-red-600",
+          },
         ].map(({ label, value, color }, i) => (
           <div
             key={i}
@@ -249,14 +286,14 @@ function PerencanaanAnggaran() {
             </h3>
           </div>
         ))}
-      </div>
+      </div> */}
 
       {/* Header Tabel */}
       <div className="flex justify-between items-center bg-indigo-900 text-white px-6 py-4 rounded-t-lg">
         <h3 className="text-lg font-semibold">Perencanaan Anggaran</h3>
         <Button
           className="bg-indigo-600 hover:bg-indigo-700"
-          onClick={() => setAdding(true)}
+          onClick={() => setIsAddModalOpen(true)}
         >
           <PlusIcon className="w-4 h-4 mr-2" /> Tambah Data
         </Button>
@@ -286,18 +323,26 @@ function PerencanaanAnggaran() {
               </tr>
             </TableHeader>
             <TableBody>
-              {paginated.map((b, idx) => (
-                <TableRow key={b.id}>
+              {rakData.map((rak, idx) => (
+                <TableRow key={rak.id}>
                   <TableCell>{(page - 1) * resultsPerPage + idx + 1}</TableCell>
-                  <TableCell>{b.periode}</TableCell>
-                  <TableCell>Rp {b.amount.toLocaleString("id-ID")}</TableCell>
-                  <TableCell>{b.tanggalPengajuan ? formatTanggal(b.tanggalPengajuan) : "-"}</TableCell>
-                  <TableCell>{b.status}</TableCell>
+                  <TableCell>{formatPeriod(rak.period)}</TableCell>
+                  <TableCell>
+                    Rp {(rak.total_amount ?? 0).toLocaleString("id-ID")}
+                  </TableCell>
+                  <TableCell>
+                    {rak.submission_date
+                      ? formatTanggal(rak.submission_date)
+                      : "-"}
+                  </TableCell>
+                  <TableCell className={`${getStatusClass(rak.status)}`}>
+                    {rak.status}
+                  </TableCell>
                   <TableCell>
                     <Button
                       size="small"
                       className="bg-blue-700 text-white"
-                      onClick={() => setSelected(b)}
+                      onClick={() => openPerencanaanDetails(rak.id)}
                     >
                       <EyeIcon className="w-4 h-4 mr-1" /> Lihat
                     </Button>
@@ -339,40 +384,50 @@ function PerencanaanAnggaran() {
       </div>
 
       {/* Modal Tambah */}
-      {adding && (
+      {isAddModalOpen && (
         <AddBudgetModal
-          budget={newBudget}
-          onChange={setNewBudget}
-          onClose={() => setAdding(false)}
-          onAdd={handleAdd}
+          rakData={initialRak}
+          rakDetailData={initialRakDetail}
+          onClose={closeAddModal}
+          onSuccess={() => {
+            getRakByBranch(Number(localStorage.getItem("branch_id"))).then(
+              (res) => {
+                setAllRakData(res.data);
+                setTotalResults(res.data.length);
+              }
+            );
+          }}
         />
       )}
 
       {/* Modal Detail */}
-      {selected && (
+      {isModalOpen && selectedPerencanaan && (
         <DetailBudgetModal
-          budget={selected}
-          onClose={() => setSelected(null)}
-          onEdit={() => {
-            setEditing(selected);
-            setSelected(null);
-          }}
-          onDelete={() => {
-            handleDelete(selected.id);
-            setSelected(null);
-          }}
+          perencanaan={selectedPerencanaan}
+          onClose={closePerencanaanDetails}
+          onEdit={() => openEditModal(selectedPerencanaan)}
+          onDelete={() => handleDeleteBudget(selectedPerencanaan.data.id)}
+          onAjukan={() => handleAjukan(selectedPerencanaan.data.id)}
           isEditable={true}
           isDeletable={true}
         />
       )}
 
       {/* Modal Edit */}
-      {editing && (
+      {isEditModalOpen && editingBudget && (
         <EditBudgetModal
-          onClose={() => setEditing(null)}
-          budget={editing}
-          onChange={handleBudgetChange}
-          onSubmitWithStatus={handleSubmitWithStatus} kategoriOptions={[]}        />
+          budget={editingBudget}
+          onClose={closeEditModal}
+          onSuccess={() => {
+            getRakByBranch(Number(localStorage.getItem("branch_id"))).then(
+              (res) => {
+                setAllRakData(res.data);
+                setTotalResults(res.data.length);
+              }
+            );
+          }}
+          loading={loading}
+        />
       )}
     </Layout>
   );

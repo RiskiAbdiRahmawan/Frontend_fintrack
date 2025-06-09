@@ -1,82 +1,187 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Dispatch, SetStateAction } from "react";
 import { Input, Label, Button, Select } from "@roketid/windmill-react-ui";
-import { Budget, BudgetItem } from "./type";
-import DeleteBudgetModal from "./delete";
+import { Category } from "types/category";
+import { getCategories } from "service/categoryService";
+import { CreateBudget, CreateBudgetDetail } from "types/rak";
+import { storeBudget, storeBudgetDetail } from "service/rakService";
 
 type Props = {
-  budget: Budget;
-  onChange: Dispatch<SetStateAction<Budget>>;
+  rakData?: CreateBudget;
+  rakDetailData?: CreateBudgetDetail;
   onClose: () => void;
-  onAdd: () => void;
+  onSuccess: () => void;
 };
 
-const AddBudgetModal: React.FC<Props> = ({ budget, onChange, onClose, onAdd }) => {
+const AddBudgetModal: React.FC<Props> = ({
+  rakData,
+  rakDetailData,
+  onClose,
+  onSuccess,
+}) => {
+  const [period, setPeriod] = useState(rakData?.period ?? "");
+  const [submissionDate, setSubmissionDate] = useState(
+    rakData?.submission_date ?? ""
+  );
+  const [budgetDetails, setBudgetDetails] = useState<CreateBudgetDetail[]>([
+    {
+      budget_id: 0,
+      category_id: 0,
+      description: "",
+      amount: 0,
+    },
+  ]);
+  const [allCategory, setAllCategory] = useState<Category[]>([]);
+  const [isSubmit, setSubmit] = useState(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const months = [
-    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
   ];
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear + i);
 
-  // Format tanggal ke "1 Januari 2025"
-  const formatTanggal = (date: Date) => {
-    const day = date.getDate();
-    const month = months[date.getMonth()];
-    const year = date.getFullYear();
-    return `${day} ${month} ${year}`;
-  };
-
   useEffect(() => {
-    if (!budget.items || budget.items.length === 0) {
-      onChange((prev) => ({
-        ...prev,
-        periode: prev.periode || `${currentYear}-01`,
-        status: prev.status || "Draft",
-        items: [{ kategori: "", deskripsi: "", jumlah: 0 }],
-      }));
-    }
-  }, [budget.items, currentYear, onChange]);
+    const fetchCategories = async () => {
+      try {
+        const response = await getCategories();
+        const pengeluaranCategories = response.filter(
+          (category: Category) => category.category_type === "pengeluaran"
+        );
+        setAllCategory(pengeluaranCategories);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
 
-  const handleItemChange = (
-    index: number,
-    field: keyof BudgetItem,
-    value: string | number
-  ) => {
-    const updatedItems = [...budget.items];
-
-    if (field === "kategori" || field === "deskripsi") {
-      updatedItems[index][field] = value as string;
-    } else if (field === "jumlah") {
-      const parsed = Number(value);
-      updatedItems[index][field] = isNaN(parsed) ? 0 : parsed;
-    }
-
-    const newTotal = updatedItems.reduce((sum, item) => sum + item.jumlah, 0);
-    onChange({ ...budget, items: updatedItems, amount: newTotal });
-  };
+    fetchCategories();
+  }, []);
 
   const addItemRow = () => {
-    const newItem: BudgetItem = { kategori: "", deskripsi: "", jumlah: 0 };
-    const updatedItems = [...budget.items, newItem];
-    onChange({ ...budget, items: updatedItems });
+    const newItem: CreateBudgetDetail = {
+      budget_id: 0,
+      category_id: 0,
+      description: "",
+      amount: 0,
+    };
+    setBudgetDetails([...budgetDetails, newItem]);
   };
 
   const removeItemRow = (index: number) => {
-    if (budget.items.length <= 1) return;
-    const updatedItems = budget.items.filter((_, i) => i !== index);
-    const newTotal = updatedItems.reduce((sum, item) => sum + item.jumlah, 0);
-    onChange({ ...budget, items: updatedItems, amount: newTotal });
+    if (budgetDetails.length <= 1) return;
+    const updatedItems = budgetDetails.filter((_, i) => i !== index);
+    setBudgetDetails(updatedItems);
+  };
+
+  const handleItemChange = (
+    index: number,
+    field: keyof CreateBudgetDetail,
+    value: any
+  ) => {
+    const updatedDetails = [...budgetDetails];
+    updatedDetails[index] = {
+      ...updatedDetails[index],
+      [field]: field === "amount" ? Number(value) : value,
+    };
+    setBudgetDetails(updatedDetails);
+  };
+
+  const getTotalAmount = () => {
+    return budgetDetails.reduce((sum, detail) => sum + (detail.amount || 0), 0);
+  };
+
+  const handleSubmit = async () => {
+    setSubmit(true);
+
+    if (!period || !submissionDate) {
+      alert("Mohon isi periode dan tanggal pengajuan");
+      setSubmit(false);
+      return;
+    }
+
+    if (
+      budgetDetails.some(
+        (detail) => !detail.category_id || !detail.description || !detail.amount
+      )
+    ) {
+      alert("Mohon lengkapi semua rincian anggaran");
+      setSubmit(false);
+      return;
+    }
+
+    let budgetId = null;
+
+    try {
+      // Store budget first
+      const budgetResponse = await storeBudget({
+        user_id: Number(localStorage.getItem("user_id")),
+        branch_id: Number(localStorage.getItem("branch_id")),
+        period: period,
+        submission_date: submissionDate,
+        status: "draf",
+      });
+
+      // PERBAIKAN: Sekarang budgetResponse memiliki type RakResponseSingle
+      // sehingga budgetResponse.data.id akan tersedia
+      if (!budgetResponse || !budgetResponse.data || !budgetResponse.data.id) {
+        throw new Error("Invalid response from server - missing budget ID");
+      }
+
+      // Ambil budget ID dari struktur response yang benar
+      budgetId = budgetResponse.data.id;
+
+      console.log("Budget created with ID:", budgetId); // Debug log
+
+      // Store each budget detail
+      for (const detail of budgetDetails) {
+        const budgetDetailResponse = await storeBudgetDetail({
+          ...detail,
+          budget_id: budgetId,
+        });
+        console.log("Budget detail created:", budgetDetailResponse); // Debug log
+      }
+
+      console.log("All budget details created successfully");
+
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error("Gagal menambahkan perencanaan:", error);
+      console.log("budgetId:", budgetId);
+
+      // Berikan error message yang lebih spesifik
+      if (error instanceof Error) {
+        alert(`Gagal menambahkan perencanaan: ${error.message}`);
+      } else {
+        alert("Gagal menambahkan perencanaan. Silakan coba lagi.");
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setSubmit(false);
+      }
+    }
   };
 
   const statusColors: Record<string, string> = {
     Draft: "bg-gray-300 text-gray-700",
-    Diajukan: "bg-blue-200 text-blue-800",
-    Disetujui: "bg-green-200 text-green-800",
-    Ditolak: "bg-red-200 text-red-800",
-    Revisi: "bg-yellow-200 text-yellow-800",
-    Pending: "bg-purple-200 text-purple-800",
-    "Revisi Diminta": "bg-orange-200 text-orange-800",
   };
 
   return (
@@ -97,15 +202,12 @@ const AddBudgetModal: React.FC<Props> = ({ budget, onChange, onClose, onAdd }) =
             <Label className="flex-1">
               <span>Bulan</span>
               <Select
-                value={budget.periode?.split("-")[1] || ""}
-                onChange={(e) =>
-                  onChange({
-                    ...budget,
-                    periode: `${budget.periode?.split("-")[0] || currentYear}-${
-                      e.target.value
-                    }`,
-                  })
-                }
+                value={period?.split("-")[1] || ""}
+                onChange={(e) => {
+                  const bulan = e.target.value.padStart(2, "0");
+                  const tahun = period?.split("-")[0] || currentYear.toString();
+                  setPeriod(`${tahun}-${bulan}`);
+                }}
               >
                 <option value="">Pilih Bulan</option>
                 {months.map((month, idx) => (
@@ -118,15 +220,12 @@ const AddBudgetModal: React.FC<Props> = ({ budget, onChange, onClose, onAdd }) =
             <Label className="flex-1">
               <span>Tahun</span>
               <Select
-                value={budget.periode?.split("-")[0] || ""}
-                onChange={(e) =>
-                  onChange({
-                    ...budget,
-                    periode: `${e.target.value}-${
-                      budget.periode?.split("-")[1] || "01"
-                    }`,
-                  })
-                }
+                value={period?.split("-")[0] || ""}
+                onChange={(e) => {
+                  const tahun = e.target.value;
+                  const bulan = period?.split("-")[1] || "01";
+                  setPeriod(`${tahun}-${bulan}`);
+                }}
               >
                 <option value="">Pilih Tahun</option>
                 {years.map((year) => (
@@ -141,20 +240,18 @@ const AddBudgetModal: React.FC<Props> = ({ budget, onChange, onClose, onAdd }) =
           <Label>
             <span>Tanggal Pengajuan</span>
             <Input
-              value={formatTanggal(budget.tanggalPengajuan)}
-              readOnly
-              className="bg-gray-100 cursor-not-allowed"
+              type="date"
+              value={submissionDate}
+              onChange={(e) => setSubmissionDate(e.target.value)}
             />
           </Label>
 
           <div className="mt-4">
             <span className="font-semibold">Status:</span>{" "}
             <span
-              className={`inline-block px-3 py-1 rounded-full font-semibold ${
-                statusColors[budget.status || "Draft"]
-              }`}
+              className={`inline-block px-3 py-1 rounded-full font-semibold ${statusColors["Draft"]}`}
             >
-              {budget.status || "Draft"}
+              Draft
             </span>
           </div>
 
@@ -165,44 +262,66 @@ const AddBudgetModal: React.FC<Props> = ({ budget, onChange, onClose, onAdd }) =
                 <tr className="bg-gray-200">
                   <th className="border border-gray-300 px-2 py-1">No</th>
                   <th className="border border-gray-300 px-2 py-1">Kategori</th>
-                  <th className="border border-gray-300 px-2 py-1">Deskripsi</th>
-                  <th className="border border-gray-300 px-2 py-1">Jumlah (Rp)</th>
+                  <th className="border border-gray-300 px-2 py-1">
+                    Deskripsi
+                  </th>
+                  <th className="border border-gray-300 px-2 py-1">
+                    Jumlah (Rp)
+                  </th>
                   <th className="border border-gray-300 px-2 py-1">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {budget.items.map((item, index) => (
+                {budgetDetails.map((detail, index) => (
                   <tr key={index}>
-                    <td className="border border-gray-300 px-2 py-1 text-center">{index + 1}</td>
+                    <td className="border border-gray-300 px-2 py-1 text-center">
+                      {index + 1}
+                    </td>
                     <td className="border border-gray-300 px-2 py-1">
                       <Select
-                        value={item.kategori}
-                        onChange={(e) => handleItemChange(index, "kategori", e.target.value)}
+                        value={detail.category_id}
+                        onChange={(e) =>
+                          handleItemChange(
+                            index,
+                            "category_id",
+                            Number(e.target.value)
+                          )
+                        }
                       >
-                        <option value="">Pilih</option>
-                        <option value="Operasional">Operasional</option>
-                        <option value="Inventaris">Inventaris</option>
-                        <option value="Lainnya">Lainnya</option>
+                        <option value="">Pilih Kategori</option>
+                        {allCategory.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.category_name}
+                          </option>
+                        ))}
                       </Select>
                     </td>
                     <td className="border border-gray-300 px-2 py-1">
                       <Input
-                        value={item.deskripsi}
-                        onChange={(e) => handleItemChange(index, "deskripsi", e.target.value)}
+                        value={detail.description}
+                        onChange={(e) =>
+                          handleItemChange(index, "description", e.target.value)
+                        }
                       />
                     </td>
                     <td className="border border-gray-300 px-2 py-1">
                       <Input
                         type="number"
-                        value={item.jumlah === 0 ? "" : item.jumlah}
-                        onChange={(e) => handleItemChange(index, "jumlah", e.target.value)}
+                        value={detail.amount === 0 ? "" : detail.amount}
+                        onChange={(e) =>
+                          handleItemChange(
+                            index,
+                            "amount",
+                            Number(e.target.value)
+                          )
+                        }
                         min={0}
                       />
                     </td>
                     <td className="border border-gray-300 px-2 py-1 text-center">
                       <button
                         onClick={() => removeItemRow(index)}
-                        disabled={budget.items.length <= 1}
+                        disabled={budgetDetails.length <= 1}
                         className={`text-red-600 border border-red-600 px-3 py-1 rounded-md
                           transition-colors hover:bg-red-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
@@ -212,11 +331,14 @@ const AddBudgetModal: React.FC<Props> = ({ budget, onChange, onClose, onAdd }) =
                   </tr>
                 ))}
                 <tr className="bg-gray-100 font-semibold">
-                  <td colSpan={3} className="text-right px-2 py-1 border border-gray-300">
+                  <td
+                    colSpan={3}
+                    className="text-right px-2 py-1 border border-gray-300"
+                  >
                     Total
                   </td>
                   <td className="px-2 py-1 border border-gray-300">
-                    Rp {budget.amount.toLocaleString("id-ID")}
+                    Rp {getTotalAmount().toLocaleString("id-ID")}
                   </td>
                   <td className="border border-gray-300"></td>
                 </tr>
@@ -234,7 +356,7 @@ const AddBudgetModal: React.FC<Props> = ({ budget, onChange, onClose, onAdd }) =
             <Button layout="outline" onClick={onClose}>
               Batal
             </Button>
-            <Button onClick={onAdd} disabled={!budget.periode || budget.items.length === 0}>
+            <Button onClick={handleSubmit} disabled={isSubmit}>
               Simpan
             </Button>
           </div>
