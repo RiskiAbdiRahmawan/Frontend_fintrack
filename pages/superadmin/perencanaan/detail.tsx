@@ -1,52 +1,29 @@
 import React from "react";
 import { Button } from "@roketid/windmill-react-ui";
-
-type AlokasiItem = {
-  id: number;
-  kategori: string;
-  keterangan: string;
-  jumlah: number;
-};
-
-type Perencanaan = {
-  id: number;
-  periode: string;
-  cabang: string;
-  status: string;
-  diajukanOleh: string;
-  tanggalPengajuan: string;
-  catatan: string;
-  alokasi: AlokasiItem[];
-  riwayat?: RiwayatAksi[];
-};
+import { RakResponseDetail, RakDetail } from "types/rak";
 
 type Props = {
-  perencanaan: Perencanaan | null;
+  perencanaan: RakResponseDetail | null;
   onClose: () => void;
-  onApprove: (id: number) => void;
   onReject: (id: number) => void;
+  onApprove: (id: number) => void;
   onRevisi: (id: number) => void;
-};
-
-type RiwayatAksi = {
-  tanggal: string;
-  aksi: string;
-  oleh: string;
 };
 
 function formatRupiah(angka: number) {
   return "Rp " + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-// Fungsi untuk memberi kelas warna status
 function statusClass(status: string) {
   switch (status) {
-    case "Disetujui":
+    case "disetujui":
       return "text-green-600 font-semibold";
-    case "Ditolak":
+    case "ditolak":
       return "text-red-600 font-semibold";
-    case "Revisi":
+    case "revisi":
       return "text-yellow-600 font-semibold";
+    case "diajukan":
+      return "text-blue-600 font-semibold";
     default:
       return "text-gray-600 font-semibold";
   }
@@ -55,16 +32,15 @@ function statusClass(status: string) {
 const DetailPerencanaanModal: React.FC<Props> = ({
   perencanaan,
   onClose,
-  onApprove,
   onReject,
+  onApprove,
   onRevisi,
 }) => {
-  if (!perencanaan) return null;
+  const data = perencanaan?.data;
 
-  const totalAnggaran = perencanaan.alokasi.reduce(
-    (sum, item) => sum + item.jumlah,
-    0
-  );
+  if (!data) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-gray-500 bg-opacity-50 z-50">
@@ -86,42 +62,24 @@ const DetailPerencanaanModal: React.FC<Props> = ({
           {/* Informasi Utama */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <strong>Periode:</strong> {perencanaan.periode}
+              <strong>Periode:</strong> {data.period}
             </div>
             <div>
-              <strong>Cabang:</strong> {perencanaan.cabang}
+              <strong>Cabang:</strong> {data.branch.name}
             </div>
             <div>
-              <strong>Tanggal Pengajuan:</strong> {perencanaan.tanggalPengajuan}
+              <strong>Tanggal Pengajuan:</strong> {data.submission_date}
             </div>
             <div>
-              <strong>Diajukan oleh:</strong> {perencanaan.diajukanOleh}
+              <strong>Diajukan oleh:</strong> {data.user.name}
             </div>
             <div>
               <strong>Status:</strong>{" "}
-              <span className={statusClass(perencanaan.status)}>
-                {perencanaan.status}
-              </span>
-              {perencanaan.riwayat && perencanaan.riwayat.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="font-bold mb-2">Riwayat Status: </h4>
-                  <ul className="text-sm text-gray-700 list-disc list-inside">
-                    {Array.from(
-                      new Map(
-                        perencanaan.riwayat.map((item) => [
-                          item.tanggal + item.aksi + item.oleh,
-                          item,
-                        ])
-                      ).values()
-                    ).map((item, index) => (
-                      <li key={index}>
-                        <strong>{item.tanggal}:</strong> {item.aksi} oleh{" "}
-                        {item.oleh}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              <span className={statusClass(data.status)}>{data.status}</span>
+              {/* <div className="mt-4">
+                <h4 className="font-bold mb-2">Permintaan Revisi: </h4>
+                <ul className="text-sm text-gray-700 list-disc list-inside"></ul>
+              </div> */}
             </div>
           </div>
 
@@ -138,23 +96,31 @@ const DetailPerencanaanModal: React.FC<Props> = ({
               </tr>
             </thead>
             <tbody>
-              {perencanaan.alokasi.map((item, index) => (
-                <tr
-                  key={item.id}
-                  className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                >
-                  <td className="p-2 border border-gray-300">{index + 1}</td>
-                  <td className="p-2 border border-gray-300">
-                    {item.kategori}
-                  </td>
-                  <td className="p-2 border border-gray-300">
-                    {item.keterangan}
-                  </td>
-                  <td className="p-2 border border-gray-300">
-                    {formatRupiah(item.jumlah)}
+              {data.detail.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-4 text-center text-gray-500">
+                    Tidak ada alokasi anggaran.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                data.detail.map((detail, index) => (
+                  <tr
+                    key={detail.id}
+                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  >
+                    <td className="p-2 border border-gray-300">{index + 1}</td>
+                    <td className="p-2 border border-gray-300">
+                      {detail.category.name}
+                    </td>
+                    <td className="p-2 border border-gray-300">
+                      {detail.description}
+                    </td>
+                    <td className="p-2 border border-gray-300">
+                      {formatRupiah(detail.amount)}
+                    </td>
+                  </tr>
+                ))
+              )}
               <tr className="font-semibold bg-gray-100">
                 <td
                   colSpan={3}
@@ -163,17 +129,11 @@ const DetailPerencanaanModal: React.FC<Props> = ({
                   Total
                 </td>
                 <td className="p-2 border border-gray-300">
-                  {formatRupiah(totalAnggaran)}
+                  {formatRupiah(data.total_amount)}
                 </td>
               </tr>
             </tbody>
           </table>
-
-          {/* Catatan */}
-          <div>
-            <strong>Catatan dari Admin:</strong>
-            <p className="mt-1 text-gray-700">{perencanaan.catatan}</p>
-          </div>
         </div>
 
         {/* Footer dengan tombol aksi */}
@@ -182,23 +142,23 @@ const DetailPerencanaanModal: React.FC<Props> = ({
             Tutup
           </Button>
 
-          {perencanaan.status === "Diajukan" && (
+          {data.status === "diajukan" && (
             <>
               <Button
                 className="bg-green-600 hover:bg-green-700"
-                onClick={() => onApprove(perencanaan.id)}
+                onClick={() => onApprove(data.id)}
               >
                 Setujui
               </Button>
               <Button
                 className="bg-red-600 hover:bg-red-700"
-                onClick={() => onReject(perencanaan.id)}
+                onClick={() => onReject(data.id)}
               >
                 Tolak
               </Button>
               <Button
                 className="bg-yellow-400 hover:bg-yellow-500"
-                onClick={() => onRevisi(perencanaan.id)}
+                onClick={() => onRevisi(data.id)}
               >
                 Minta Revisi
               </Button>

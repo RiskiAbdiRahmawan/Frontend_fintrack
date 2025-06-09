@@ -11,7 +11,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   if (!process.browser) React.useLayoutEffect = React.useEffect;
 
   return (
-    <Windmill usePreferences={true}>
+    <Windmill usePreferences={false} dark={false}>
       <AuthComponent {...pageProps} />
     </Windmill>
   );
