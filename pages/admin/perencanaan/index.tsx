@@ -414,7 +414,7 @@ function PerencanaanAnggaran() {
       )}
 
       {/* Modal Edit */}
-      {isEditModalOpen && editingBudget && (
+      {isEditModalOpen && editingBudget && typeof window !== "undefined" && (
         <EditBudgetModal
           budget={editingBudget}
           onClose={closeEditModal}

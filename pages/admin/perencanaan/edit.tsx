@@ -18,9 +18,9 @@ const EditBudgetModal: React.FC<Props> = ({
   onSuccess,
   loading = false,
 }) => {
-  const [period, setPeriod] = useState(budget.data.period || "");
+  const [period, setPeriod] = useState(budget?.data?.period || "");
   const [submissionDate, setSubmissionDate] = useState(
-    budget.data.submission_date || ""
+    budget?.data?.submission_date || ""
   );
   const [budgetDetails, setBudgetDetails] = useState<CreateBudgetDetail[]>([]);
   const [allCategory, setAllCategory] = useState<Category[]>([]);
@@ -45,27 +45,7 @@ const EditBudgetModal: React.FC<Props> = ({
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear + i);
 
-  // Fungsi untuk parsing angka dari string yang mungkin mengandung koma
-  const parseNumber = (value: string | number): number => {
-    if (typeof value === "number") {
-      return isNaN(value) ? 0 : value;
-    }
-
-    if (typeof value === "string") {
-      // Hapus semua karakter non-digit kecuali titik dan minus
-      const cleaned = value.replace(/[^0-9.-]/g, "");
-      const parsed = parseFloat(cleaned);
-      return isNaN(parsed) ? 0 : parsed;
-    }
-
-    return 0;
-  };
-
-  // Fungsi untuk format angka dengan koma sebagai pemisah ribuan
-  const formatNumber = (value: number): string => {
-    return value.toLocaleString("id-ID");
-  };
-
+  // Move all useEffect hooks here, before any conditional returns
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -90,7 +70,7 @@ const EditBudgetModal: React.FC<Props> = ({
   }, []);
 
   useEffect(() => {
-    if (budget.data.detail && budget.data.detail.length > 0) {
+    if (budget?.data?.detail && budget.data.detail.length > 0) {
       const initialDetails = budget.data.detail.map((detail) => ({
         budget_id: budget.data.id,
         category_id: detail.category.id,
@@ -102,7 +82,7 @@ const EditBudgetModal: React.FC<Props> = ({
       // If no details, create one empty row
       setBudgetDetails([
         {
-          budget_id: budget.data.id,
+          budget_id: budget?.data?.id || 0,
           category_id: 0,
           description: "",
           amount: 0,
@@ -110,6 +90,32 @@ const EditBudgetModal: React.FC<Props> = ({
       ]);
     }
   }, [budget]);
+
+  // Add check for budget existence after all hooks
+  if (!budget || !budget.data) {
+    return null;
+  }
+
+  // Fungsi untuk parsing angka dari string yang mungkin mengandung koma
+  const parseNumber = (value: string | number): number => {
+    if (typeof value === "number") {
+      return isNaN(value) ? 0 : value;
+    }
+
+    if (typeof value === "string") {
+      // Hapus semua karakter non-digit kecuali titik dan minus
+      const cleaned = value.replace(/[^0-9.-]/g, "");
+      const parsed = parseFloat(cleaned);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+
+    return 0;
+  };
+
+  // Fungsi untuk format angka dengan koma sebagai pemisah ribuan
+  const formatNumber = (value: number): string => {
+    return value.toLocaleString("id-ID");
+  };
 
   const isEditable = ["draf", "revisi"].includes(
     budget.data.status?.toLowerCase() || ""
