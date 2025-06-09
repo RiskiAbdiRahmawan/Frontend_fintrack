@@ -20,6 +20,7 @@ import {
 } from "@heroicons/react/24/solid";
 
 import Layout from "example/containers/Layout";
+import Loader from "example/components/Loader/Loader";
 import PageTitle from "example/components/Typography/PageTitle";
 
 import TambahBranchModal from "./tambah";
@@ -48,15 +49,19 @@ const ManajemenCabang = () => {
     branch_name: "",
     branch_address: "",
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   const resultsPerPage = 10;
 
   const fetchBranches = async () => {
     try {
+      setIsLoading(true);
       const data = await getBranches();
       setBranches(data);
     } catch (error) {
       console.error("Failed to fetch branches:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -164,39 +169,54 @@ const ManajemenCabang = () => {
               </tr>
             </TableHeader>
             <TableBody>
-              {paginatedBranches.map((branch) => (
-                <TableRow key={branch.id}>
-                  <TableCell>{branch.id}</TableCell>
-                  <TableCell>{branch.branch_code}</TableCell>
-                  <TableCell>{branch.branch_name}</TableCell>
-                  <TableCell>{branch.branch_address}</TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        size="small"
-                        className="bg-blue-700 text-white"
-                        onClick={() => setSelectedBranch(branch)}
-                      >
-                        <EyeIcon className="w-4 h-4 mr-1" /> Lihat
-                      </Button>
-                      <Button
-                        size="small"
-                        className="bg-yellow-400 text-black hover:bg-yellow-500"
-                        onClick={() => setEditingBranch(branch)}
-                      >
-                        <EditIcon className="w-4 h-4 mr-1" /> Edit
-                      </Button>
-                      <Button
-                        size="small"
-                        className="bg-red-600 text-white hover:bg-red-700"
-                        onClick={() => setDeletingBranch(branch)}
-                      >
-                        <TrashIcon className="w-4 h-4 mr-1" /> Hapus
-                      </Button>
-                    </div>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-6">
+                    Loading...
+                    <Loader />
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : paginatedBranches.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-6">
+                    Tidak ada data Cabang.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedBranches.map((branch) => (
+                  <TableRow key={branch.id}>
+                    <TableCell>{branch.id}</TableCell>
+                    <TableCell>{branch.branch_code}</TableCell>
+                    <TableCell>{branch.branch_name}</TableCell>
+                    <TableCell>{branch.branch_address}</TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          size="small"
+                          className="bg-blue-700 text-white"
+                          onClick={() => setSelectedBranch(branch)}
+                        >
+                          <EyeIcon className="w-4 h-4 mr-1" /> Lihat
+                        </Button>
+                        <Button
+                          size="small"
+                          className="bg-yellow-400 text-black hover:bg-yellow-500"
+                          onClick={() => setEditingBranch(branch)}
+                        >
+                          <EditIcon className="w-4 h-4 mr-1" /> Edit
+                        </Button>
+                        <Button
+                          size="small"
+                          className="bg-red-600 text-white hover:bg-red-700"
+                          onClick={() => setDeletingBranch(branch)}
+                        >
+                          <TrashIcon className="w-4 h-4 mr-1" /> Hapus
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
           <TableFooter>
