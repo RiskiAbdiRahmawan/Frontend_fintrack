@@ -171,7 +171,7 @@ function ManajemenKategori() {
           <Table>
             <TableHeader>
               <tr className="bg-indigo-100">
-                <TableCell>ID</TableCell>
+                <TableCell>NO</TableCell>
                 <TableCell>Nama Kategori</TableCell>
                 <TableCell>Tipe</TableCell>
                 <TableCell>Aksi</TableCell>
@@ -193,29 +193,17 @@ function ManajemenKategori() {
                     <TableCell>{cat.category_name}</TableCell>
                     <TableCell>{cat.category_type}</TableCell>
                     <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          size="small"
-                          className="bg-blue-700 text-white"
-                          onClick={() => openCategoryDetails(cat.id)}
-                        >
-                          <EyeIcon className="w-4 h-4 mr-1" /> Lihat
-                        </Button>
-                        <Button
-                          size="small"
-                          className="bg-yellow-400 text-black hover:bg-yellow-500"
-                          onClick={() => handleEdit(cat)}
-                        >
-                          <EditIcon className="w-4 h-4 mr-1" /> Edit
-                        </Button>
-                        <Button
-                          size="small"
-                          className="bg-red-600 text-white hover:bg-red-700"
-                          onClick={() => setDeletingCategory(cat)}
-                        >
-                          <TrashIcon className="w-4 h-4 mr-1" /> Hapus
-                        </Button>
-                      </div>
+                    
+
+                    <div className="flex space-x-2 ml-[-21px]">
+  <Button
+    size="small"
+    className="bg-yellow-400 text-black hover:bg-yellow-500"
+    onClick={() => handleEdit(cat)}
+  >
+    <EditIcon className="w-4 h-4 mr-1" /> Edit
+  </Button>
+</div>
                     </TableCell>
                   </TableRow>
                 ))

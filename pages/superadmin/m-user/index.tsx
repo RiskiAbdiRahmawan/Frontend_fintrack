@@ -134,10 +134,6 @@ function ManajemenUser() {
 
   if (error) return <p className="tex;t-red-500">{error}</p>;
 
-  if (isLoading) {
-    return <Loader />;
-  }
-
   return (
     <Layout>
       <PageTitle>Manajemen User</PageTitle>
@@ -176,7 +172,14 @@ function ManajemenUser() {
               </tr>
             </TableHeader>
             <TableBody>
-              {users.length === 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-6">
+                    Loading...
+                    <Loader />
+                  </TableCell>
+                </TableRow>
+              ) : users.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-6">
                     Tidak ada data pengguna.
