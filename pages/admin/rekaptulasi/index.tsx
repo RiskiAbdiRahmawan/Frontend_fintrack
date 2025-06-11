@@ -16,7 +16,7 @@ import { DocumentTextIcon, CheckIcon } from "@heroicons/react/24/outline";
 import Layout from "example/containers/Layout";
 import PageTitle from "example/components/Typography/PageTitle";
 import { RekapType } from "types/rekap";
-import { getRekapByBranch } from "service/rekapService";
+import { getRekapByBranch, handleExportExcel } from "service/rekapService";
 
 const getFormattedPeriode = (periode: string): string => {
   const [month, year] = periode.split("-");
@@ -38,6 +38,8 @@ const getFormattedPeriode = (periode: string): string => {
 };
 
 const RekaptulasiPage = () => {
+  const [exportState, setExportState] = useState({ status: "idle" });
+
   // Data state
   const [data, setData] = useState<RekapType[]>([]);
   const [filteredData, setFilteredData] = useState<RekapType[]>([]);
@@ -48,15 +50,6 @@ const RekaptulasiPage = () => {
   const [page, setPage] = useState(1);
   const [resultsPerPage, setResultsPerPage] = useState(10);
   const totalResults = filteredData.length;
-
-  // Export state
-  const [exportState, setExportState] = useState<{
-    status: "idle" | "exporting_pdf" | "exporting_excel";
-    error: string | null;
-  }>({
-    status: "idle",
-    error: null,
-  });
 
   // Fetch data
   useEffect(() => {
@@ -117,39 +110,6 @@ const RekaptulasiPage = () => {
     { value: "11", label: "November" },
     { value: "12", label: "Desember" },
   ];
-
-  // Export handlers
-  const handleExportPDF = async () => {
-    setExportState({ status: "exporting_pdf", error: null });
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      alert(`Mengunduh laporan PDF untuk:
-      Periode: ${selectedMonth || "Semua Bulan"} ${selectedYear}`);
-    } catch (error) {
-      setExportState({
-        status: "idle",
-        error: "Gagal mengekspor PDF",
-      });
-    } finally {
-      setExportState((prev) => ({ ...prev, status: "idle" }));
-    }
-  };
-
-  const handleExportExcel = async () => {
-    setExportState({ status: "exporting_excel", error: null });
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      alert(`Mengunduh laporan Excel untuk:
-      Periode: ${selectedMonth || "Semua Bulan"} ${selectedYear}`);
-    } catch (error) {
-      setExportState({
-        status: "idle",
-        error: "Gagal mengekspor Excel",
-      });
-    } finally {
-      setExportState((prev) => ({ ...prev, status: "idle" }));
-    }
-  };
 
   return (
     <Layout>
@@ -363,7 +323,7 @@ const RekaptulasiPage = () => {
           <div className="flex gap-4 mt-6 justify-end">
             <Button
               className="flex items-center bg-red-600 text-white hover:bg-red-700 px-4 py-2"
-              onClick={handleExportPDF}
+              // onClick={handleExportPDF}
               disabled={exportState.status === "exporting_pdf"}
             >
               {exportState.status === "exporting_pdf" ? (
@@ -397,7 +357,7 @@ const RekaptulasiPage = () => {
 
             <Button
               className="flex items-center bg-green-600 text-white hover:bg-green-700 px-4 py-2"
-              onClick={handleExportExcel}
+              onClick={() => handleExportExcel(setExportState)}
               disabled={exportState.status === "exporting_excel"}
             >
               {exportState.status === "exporting_excel" ? (
@@ -429,10 +389,6 @@ const RekaptulasiPage = () => {
               )}
             </Button>
           </div>
-
-          {exportState.error && (
-            <div className="mt-4 text-red-500 text-sm">{exportState.error}</div>
-          )}
         </div>
       </div>
     </Layout>

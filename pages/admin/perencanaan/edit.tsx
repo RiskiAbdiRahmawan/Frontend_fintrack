@@ -3,7 +3,11 @@ import { Input, Label, Button, Select } from "@roketid/windmill-react-ui";
 import { RakResponseDetail, CreateBudgetDetail } from "types/rak";
 import { Category } from "types/category";
 import { getCategories } from "service/categoryService";
-import { deleteRakByBranch, storeBudgetDetail } from "service/rakService";
+import {
+  deleteRakByBranch,
+  storeBudgetDetail,
+  updateRakStatus,
+} from "service/rakService";
 
 type Props = {
   budget: RakResponseDetail;
@@ -221,6 +225,9 @@ const EditBudgetModal: React.FC<Props> = ({
         });
         console.log("Budget detail created:", budgetDetailResponse);
       }
+
+      console.log("Updating Rak status to " + status);
+      await updateRakStatus(budget.data.id, status);
 
       console.log("All budget details updated successfully");
 
@@ -454,13 +461,13 @@ const EditBudgetModal: React.FC<Props> = ({
             </Button>
             {isEditable && (
               <>
-                <Button
+                {/* <Button
                   onClick={() => handleSubmitWithStatus("draf")}
                   className="bg-gray-600 text-white hover:bg-gray-700"
                   disabled={isSubmit}
                 >
                   {isSubmit ? "Menyimpan..." : "Simpan Draft"}
-                </Button>
+                </Button> */}
                 <Button
                   onClick={() => handleSubmitWithStatus("diajukan")}
                   className="bg-blue-900 text-white hover:bg-blue-800"
