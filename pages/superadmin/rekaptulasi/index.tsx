@@ -16,7 +16,22 @@ import { DocumentTextIcon, CheckIcon } from "@heroicons/react/24/outline";
 import Layout from "example/containers/Layout";
 import PageTitle from "example/components/Typography/PageTitle";
 import { RekapType } from "types/rekap";
-import { getAllRekap } from "service/rekapService";
+import { getbranches } from "service/branchService";
+import {
+  getAllRekap,
+  handleExportExcel,
+  handleExportPDF,
+} from "service/rekapService";
+
+interface Branch {
+  id: number;
+  branch_code: string;
+  branch_name: string;
+  branch_address: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
 
 const getFormattedPeriode = (periode: string): string => {
   const [month, year] = periode.split("-");
@@ -38,6 +53,8 @@ const getFormattedPeriode = (periode: string): string => {
 };
 
 const RekaptulasiPage = () => {
+  // Export state
+  const [exportState, setExportState] = useState({ status: "idle" });
   // Data state
   const [data, setData] = useState<RekapType[]>([]);
   const [filteredData, setFilteredData] = useState<RekapType[]>([]);
@@ -45,20 +62,12 @@ const RekaptulasiPage = () => {
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("Semua Cabang");
   const [selectedMonth, setSelectedMonth] = useState("");
+  const [branches, setBranches] = useState<Branch[]>([]);
 
   // Pagination
   const [page, setPage] = useState(1);
   const [resultsPerPage, setResultsPerPage] = useState(10);
   const totalResults = filteredData.length;
-
-  // Export state
-  const [exportState, setExportState] = useState<{
-    status: "idle" | "exporting_pdf" | "exporting_excel";
-    error: string | null;
-  }>({
-    status: "idle",
-    error: null,
-  });
 
   // Fetch data
   useEffect(() => {
@@ -99,7 +108,7 @@ const RekaptulasiPage = () => {
     }).format(parseFloat(amount));
 
   // Get unique branches
-  const branches = Array.from(new Set(data.map((item) => item.branch_name)));
+  const branchOptions = branches.map((branch) => branch.branch_name);
 
   // Get unique years from periode
   const years = Array.from(
@@ -121,43 +130,56 @@ const RekaptulasiPage = () => {
     { value: "12", label: "Desember" },
   ];
 
-  // Export handlers
-  const handleExportPDF = async () => {
-    setExportState({ status: "exporting_pdf", error: null });
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      alert(`Mengunduh laporan PDF untuk:
-      Cabang: ${
-        selectedBranch === "Semua Cabang" ? "Semua Cabang" : selectedBranch
-      }
-      Periode: ${selectedMonth || "Semua Bulan"} ${selectedYear}`);
-    } catch (error) {
-      setExportState({
-        status: "idle",
-        error: "Gagal mengekspor PDF",
-      });
-    } finally {
-      setExportState((prev) => ({ ...prev, status: "idle" }));
+  // Export validation with branch ID
+  const handleExportWithValidation = (exportType: "pdf" | "excel") => {
+    // Validasi apakah cabang sudah dipilih
+    if (selectedBranch === "Semua Cabang") {
+      alert("Silakan pilih cabang terlebih dahulu sebelum mengekspor laporan.");
+      return;
+    }
+
+    // Dapatkan branch ID
+    const branchId = getBranchIdByName(selectedBranch);
+
+    if (!branchId) {
+      alert("ID cabang tidak ditemukan.");
+      return;
+    }
+
+    // Validasi apakah ada data untuk cabang yang dipilih
+    const branchData = filteredData.find(
+      (item) => item.branch_name === selectedBranch
+    );
+
+    if (!branchData) {
+      alert("Data cabang tidak ditemukan untuk periode yang dipilih.");
+      return;
+    }
+
+    // Lakukan export sesuai tipe dengan branch ID
+    if (exportType === "pdf") {
+      handleExportPDF(setExportState, branchId.toString());
+    } else {
+      handleExportExcel(setExportState, branchId.toString());
     }
   };
 
-  const handleExportExcel = async () => {
-    setExportState({ status: "exporting_excel", error: null });
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      alert(`Mengunduh laporan Excel untuk:
-      Cabang: ${
-        selectedBranch === "Semua Cabang" ? "Semua Cabang" : selectedBranch
+  // Fetch branches data
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const branchesData = await getbranches();
+        setBranches(branchesData);
+      } catch (error) {
+        console.error("Error fetching branches:", error);
       }
-      Periode: ${selectedMonth || "Semua Bulan"} ${selectedYear}`);
-    } catch (error) {
-      setExportState({
-        status: "idle",
-        error: "Gagal mengekspor Excel",
-      });
-    } finally {
-      setExportState((prev) => ({ ...prev, status: "idle" }));
-    }
+    };
+    fetchBranches();
+  }, []);
+
+  const getBranchIdByName = (branchName: string): number | null => {
+    const branch = branches.find((b) => b.branch_name === branchName);
+    return branch ? branch.id : null;
   };
 
   return (
@@ -210,9 +232,9 @@ const RekaptulasiPage = () => {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
           >
             <option value="Semua Cabang">Semua Cabang</option>
-            {branches.map((branch) => (
-              <option key={branch} value={branch}>
-                {branch}
+            {branchOptions.map((branchName) => (
+              <option key={branchName} value={branchName}>
+                {branchName}
               </option>
             ))}
           </select>
@@ -412,7 +434,7 @@ const RekaptulasiPage = () => {
           <div className="flex gap-4 mt-6 justify-end">
             <Button
               className="flex items-center bg-red-600 text-white hover:bg-red-700 px-4 py-2"
-              onClick={handleExportPDF}
+              onClick={() => handleExportWithValidation("pdf")}
               disabled={exportState.status === "exporting_pdf"}
             >
               {exportState.status === "exporting_pdf" ? (
@@ -446,7 +468,7 @@ const RekaptulasiPage = () => {
 
             <Button
               className="flex items-center bg-green-600 text-white hover:bg-green-700 px-4 py-2"
-              onClick={handleExportExcel}
+              onClick={() => handleExportWithValidation("excel")}
               disabled={exportState.status === "exporting_excel"}
             >
               {exportState.status === "exporting_excel" ? (
@@ -478,10 +500,6 @@ const RekaptulasiPage = () => {
               )}
             </Button>
           </div>
-
-          {exportState.error && (
-            <div className="mt-4 text-red-500 text-sm">{exportState.error}</div>
-          )}
         </div>
       </div>
     </Layout>

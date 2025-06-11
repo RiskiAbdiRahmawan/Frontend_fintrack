@@ -327,7 +327,12 @@ const RekaptulasiPage = () => {
           <div className="flex gap-4 mt-6 justify-end">
             <Button
               className="flex items-center bg-red-600 text-white hover:bg-red-700 px-4 py-2"
-              onClick={() => handleExportPDF(setExportState)}
+              onClick={() =>
+                handleExportPDF(
+                  setExportState,
+                  localStorage.getItem("branch_id") ?? undefined
+                )
+              }
               disabled={exportState.status === "exporting_pdf"}
             >
               {exportState.status === "exporting_pdf" ? (
@@ -361,7 +366,12 @@ const RekaptulasiPage = () => {
 
             <Button
               className="flex items-center bg-green-600 text-white hover:bg-green-700 px-4 py-2"
-              onClick={() => handleExportExcel(setExportState)}
+              onClick={() =>
+                handleExportExcel(
+                  setExportState,
+                  localStorage.getItem("branch_id") ?? undefined
+                )
+              }
               disabled={exportState.status === "exporting_excel"}
             >
               {exportState.status === "exporting_excel" ? (
