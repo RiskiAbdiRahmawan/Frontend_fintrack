@@ -5,6 +5,7 @@ import {
   CreateTransaction,
   LockTransaction,
   TransactionResponse,
+  PosResPonse,
 } from "types/transaction";
 
 export const getTransactions = async (): Promise<TransactionResponse> => {
@@ -61,4 +62,9 @@ export const lockTransaction = async (
     data
   );
   return response.data.data;
+};
+
+export const getPos = async (): Promise<PosResPonse> => {
+  const response = await axiosInstance.get("/transaction-pos");
+  return response.data;
 };
