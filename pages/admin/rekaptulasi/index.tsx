@@ -16,7 +16,11 @@ import { DocumentTextIcon, CheckIcon } from "@heroicons/react/24/outline";
 import Layout from "example/containers/Layout";
 import PageTitle from "example/components/Typography/PageTitle";
 import { RekapType } from "types/rekap";
-import { getRekapByBranch, handleExportExcel } from "service/rekapService";
+import {
+  getRekapByBranch,
+  handleExportExcel,
+  handleExportPDF,
+} from "service/rekapService";
 
 const getFormattedPeriode = (periode: string): string => {
   const [month, year] = periode.split("-");
@@ -323,7 +327,7 @@ const RekaptulasiPage = () => {
           <div className="flex gap-4 mt-6 justify-end">
             <Button
               className="flex items-center bg-red-600 text-white hover:bg-red-700 px-4 py-2"
-              // onClick={handleExportPDF}
+              onClick={() => handleExportPDF(setExportState)}
               disabled={exportState.status === "exporting_pdf"}
             >
               {exportState.status === "exporting_pdf" ? (

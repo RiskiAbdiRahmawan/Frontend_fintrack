@@ -283,7 +283,7 @@ const RekaptulasiPage = () => {
           <h3 className="text-lg font-semibold">Data Rekapitulasi</h3>
           <Input
             placeholder="Cari cabang..."
-            className="w-64"
+            className="w-64 text-black"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
           />
