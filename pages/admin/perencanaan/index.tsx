@@ -303,7 +303,7 @@ function PerencanaanAnggaran() {
       <div className="bg-white shadow-md rounded-b-lg overflow-x-auto">
         <div className="p-4">
           <Input
-            placeholder="🔍 Cari anggaran..."
+            placeholder="🔍 Cari Status Anggaran"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             className="w-1/3 mb-4"

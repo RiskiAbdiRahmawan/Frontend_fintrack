@@ -191,7 +191,7 @@ export default function Perencanaan() {
         <div className="w-full max-w-sm">
           <input
             type="text"
-            placeholder="🔍Cari Perencanaan"
+            placeholder="🔍Cari Status Perencanaan"
             className="w-full pl-4 pr-4 py-2 border rounded shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}

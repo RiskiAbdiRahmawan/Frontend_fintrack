@@ -45,3 +45,12 @@ export interface TransactionResponse {
     locked_count: number;
   };
 }
+
+export interface PosResPonse {
+  data: Transaction[];
+  meta: {
+    status: string;
+    total: number;
+    total_amount: number;
+  };
+}
