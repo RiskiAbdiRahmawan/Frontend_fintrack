@@ -10,7 +10,8 @@ export interface Transaksi {
 export interface DashboardSummary {
   pemasukan: number;
   pengeluaran: number;
-  saldo: number;
+  total_anggaran: number;
+  realisasi_anggaran: number;
 }
 
 export async function fetchDashboardSummary(): Promise<DashboardSummary> {
