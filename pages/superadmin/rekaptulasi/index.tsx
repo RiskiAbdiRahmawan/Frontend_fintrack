@@ -12,7 +12,11 @@ import {
   Badge,
   Pagination,
 } from "@roketid/windmill-react-ui";
-import { DocumentTextIcon, CheckIcon } from "@heroicons/react/24/outline";
+import {
+  DocumentTextIcon,
+  CheckIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import Layout from "example/containers/Layout";
 import PageTitle from "example/components/Typography/PageTitle";
 import { RekapType } from "types/rekap";
@@ -182,6 +186,13 @@ const RekaptulasiPage = () => {
     return branch ? branch.id : null;
   };
 
+  const totalTerkunci = filteredData.filter(
+    (item) => item.total_locked === item.total_transaksi
+  ).length;
+  const totalTerbuka = filteredData.filter(
+    (item) => item.total_locked !== item.total_transaksi
+  ).length;
+
   return (
     <Layout>
       <PageTitle>Rekaptulasi & Tutup Buku</PageTitle>
@@ -205,13 +216,17 @@ const RekaptulasiPage = () => {
             <CheckIcon className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600">Status</p>
-            <p className="text-lg font-semibold">
-              {filteredData.length > 0 &&
-              filteredData[0].total_locked === filteredData[0].total_transaksi
-                ? "Terkunci"
-                : "Belum Ditutup"}
-            </p>
+            <p className="text-sm font-medium text-gray-600">Jumlah Terkunci</p>
+            <p className="text-lg font-semibold">{totalTerkunci}</p>
+          </div>
+        </div>
+        <div className="flex items-center p-4 bg-white rounded-lg shadow">
+          <div className="p-3 mr-4 rounded-full bg-red-100 text-red-500">
+            <XMarkIcon className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">Jumlah Terbuka</p>
+            <p className="text-lg font-semibold">{totalTerbuka}</p>
           </div>
         </div>
       </div>
