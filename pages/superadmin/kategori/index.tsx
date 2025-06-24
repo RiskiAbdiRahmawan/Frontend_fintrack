@@ -12,46 +12,16 @@ import {
   Pagination,
   Input,
 } from "@roketid/windmill-react-ui";
-import {
-  EyeIcon,
-  PlusIcon,
-  PencilIcon as EditIcon,
-  TrashIcon,
-} from "@heroicons/react/24/solid";
+import { PlusIcon, PencilIcon as EditIcon } from "@heroicons/react/24/solid";
 import Layout from "example/containers/Layout";
 import PageTitle from "example/components/Typography/PageTitle";
 import AddCategoryModal from "./tambah";
 import EditCategoryModal from "./edit";
-import DetailCategoryModal from "./detail";
-import DeleteCategoryModal from "./delete";
 import Loader from "example/components/Loader/Loader";
-import {
-  getCategories,
-  getCategoryById,
-  deletecategory,
-} from "service/categoryService";
+import { getCategories } from "service/categoryService";
 import { BaseCategory, Category } from "types/category";
 
 function ManajemenKategori() {
-  //detail
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    null
-  );
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const openCategoryDetails = async (id: number) => {
-    try {
-      const user = await getCategoryById(id);
-      setSelectedCategory(user);
-      setIsModalOpen(true);
-    } catch (error) {
-      console.error("Gagal mengambil detail pengguna: ", error);
-    }
-  };
-  const closeCategoryDetails = () => {
-    setSelectedCategory(null);
-    setIsModalOpen(false);
-  };
-
   // add
   const [addingCategory, setAddingCategory] = useState(false);
   const handleAdd = () => {
@@ -74,23 +44,6 @@ function ManajemenKategori() {
     setEditingCategory(null);
   };
 
-  // delete
-  const [deletingCategory, setDeletingCategory] = useState<Category | null>(
-    null
-  );
-  const handleDeleteCategory = async () => {
-    if (!deletingCategory) return;
-    try {
-      await deletecategory(deletingCategory.id);
-      getCategories().then((res) => {
-        setAllCategories(res.data);
-      });
-      setDeletingCategory(null);
-    } catch (error) {
-      console.error("Error deleting user:", error);
-    }
-  };
-
   // index
   const [isLoading, setIsLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -106,6 +59,7 @@ function ManajemenKategori() {
       setIsLoading(true);
       const categoryResponse = await getCategories();
       setAllCategories(categoryResponse);
+      setTotalCategory(categoryResponse.length);
     } catch (error) {
       console.error("Error fetching Users: ", error);
       setError("Gagal mengambil data pengguna");
@@ -193,17 +147,15 @@ function ManajemenKategori() {
                     <TableCell>{cat.category_name}</TableCell>
                     <TableCell>{cat.category_type}</TableCell>
                     <TableCell>
-                    
-
-                    <div className="flex space-x-2 ml-[-21px]">
-  <Button
-    size="small"
-    className="bg-yellow-400 text-black hover:bg-yellow-500"
-    onClick={() => handleEdit(cat)}
-  >
-    <EditIcon className="w-4 h-4 mr-1" /> Edit
-  </Button>
-</div>
+                      <div className="flex space-x-2 ml-[-21px]">
+                        <Button
+                          size="small"
+                          className="bg-yellow-400 text-black hover:bg-yellow-500"
+                          onClick={() => handleEdit(cat)}
+                        >
+                          <EditIcon className="w-4 h-4 mr-1" /> Edit
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -246,7 +198,8 @@ function ManajemenKategori() {
           onClose={closeAddModal}
           onSuccess={() => {
             getCategories().then((res) => {
-              setAllCategories(res.data);
+              setAllCategories(res);
+              setTotalCategory(res.length);
             });
           }}
         />
@@ -258,24 +211,10 @@ function ManajemenKategori() {
           onClose={closeEditModel}
           onSuccess={() => {
             getCategories().then((res) => {
-              setAllCategories(res.data);
+              setAllCategories(res);
+              setTotalCategory(res.length);
             });
           }}
-        />
-      )}
-      {/* Pop-up detail kategori */}
-      {isModalOpen && selectedCategory && (
-        <DetailCategoryModal
-          category={selectedCategory}
-          onClose={closeCategoryDetails}
-        />
-      )}
-      {/* Pop-up hapus kategori */}
-      {deletingCategory && (
-        <DeleteCategoryModal
-          category={deletingCategory}
-          onClose={() => setDeletingCategory(null)}
-          onDelete={handleDeleteCategory}
         />
       )}
     </Layout>

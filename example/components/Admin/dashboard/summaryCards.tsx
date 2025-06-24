@@ -22,8 +22,10 @@ export default function SummaryCards() {
   if (!summary) return <div>Loading...</div>;
 
   // Format angka ke string dengan titik ribuan dan koma desimal Indonesia
-  const formatRupiah = (number: number) =>
-    `Rp. ${number.toLocaleString("id-ID")},00`;
+  const formatRupiah = (value: number | string): string => {
+    const number = Math.floor(Number(value));
+    return `Rp. ${number.toLocaleString("id-ID")},00`;
+  };
 
   return (
     <div className="grid gap-6 mb-8 md:grid-cols-2 xl:grid-cols-4">
@@ -45,12 +47,24 @@ export default function SummaryCards() {
           className="mr-4"
         />
       </InfoCard>
-      <InfoCard title="Saldo" value={formatRupiah(summary.saldo)}>
+      <InfoCard title="Anggaran" value={formatRupiah(summary.total_anggaran)}>
         {/* @ts-ignore */}
         <RoundIcon
           icon={MoneyIcon}
           iconColorClass="text-blue-500 dark:text-blue-100"
           bgColorClass="bg-blue-100 dark:bg-blue-500"
+          className="mr-4"
+        />
+      </InfoCard>
+      <InfoCard
+        title="Sisa Anggaran"
+        value={formatRupiah(summary.realisasi_anggaran)}
+      >
+        {/* @ts-ignore */}
+        <RoundIcon
+          icon={MoneyIcon}
+          iconColorClass="text-purple-500 dark:text-purple-100"
+          bgColorClass="bg-purple-100 dark:bg-purple-500"
           className="mr-4"
         />
       </InfoCard>
